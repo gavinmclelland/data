@@ -75,6 +75,25 @@ test("a record's changes can be made if it fails to save", function() {
   }));
 });
 
+test("invalid record can be rolled back", function() {
+  env.adapter.updateRecord = function(store, type, record) {
+    return Ember.RSVP.reject(new DS.InvalidError({firstName: "invalid"}));
+  };
+
+  var person = store.push('person', { id: 1, firstName: "Tom", lastName: "Dale" });
+
+  person.set('firstName', "Thomas");
+
+  person.save().then(null, async(function() {
+    equal(person.get('isValid'), false);
+
+    person.rollback();
+
+    equal(person.get('firstName'), "Tom");
+    equal(person.get('isValid'), true);
+  }));
+});
+
 test("new record can be rollbacked", function() {
   var person = store.createRecord('person', { id: 1 });
 
